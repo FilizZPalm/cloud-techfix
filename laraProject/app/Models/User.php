@@ -22,4 +22,7 @@ class User extends Model {
     public function tecnico() {
         return $this->hasOne(Tecnico::class, 'username', 'username');
     }
+    public function staff() {
+        return $this->hasOne(Staff::class, 'username', 'username');
+    }
 }

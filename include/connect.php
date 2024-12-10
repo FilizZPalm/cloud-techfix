@@ -1,5 +1,5 @@
 <?php 
-$USER="grp_61";
+$USER="tweb";
 $DB="grp_61_db";
-$HOST="localhost";
-$PASSWORD="oh0OPpj4";
+$HOST = "127.0.0.1";
+$PASSWORD="tweb";

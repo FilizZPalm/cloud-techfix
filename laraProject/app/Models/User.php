@@ -2,53 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Model;
 
-class User extends Authenticatable {
+class User extends Model {
+    protected $table = 'user';
+    protected $primaryKey = 'username';
+    public $incrementing = false;  // Poiché `username` non è un integer
+    protected $keyType = 'string';
 
-    use HasApiTokens,
-        HasFactory,
-        Notifiable;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        'name',
-        'surname',
-        'email',
-        'username',
-        'password',
+        'username', 
+        'password', 
+        'nome', 
+        'cognome', 
+        'role'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'username',
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
-
-    public function hasRole($role): bool {
-        $role = (array) $role;
-        return in_array($this->role, $role);
+    // Definisci una relazione con Tecnico
+    public function tecnico() {
+        return $this->hasOne(Tecnico::class, 'username', 'username');
     }
 }

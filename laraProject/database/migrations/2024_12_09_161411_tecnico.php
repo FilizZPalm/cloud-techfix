@@ -21,6 +21,8 @@ return new class extends Migration
                 'Tecnico software'
             ]);
             $table->foreign('username')->references('username')->on('user')->onDelete('cascade')->onUpdate('cascade');
+            $table->unsignedBigInteger('id_centro_assistenza');
+            $table->foreign('id_centro_assistenza')->references('id')->on('centro_assistenza')->onDelete('cascade')->onUpdate('cascade');
         });
     }
 

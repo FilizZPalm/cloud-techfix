@@ -25,4 +25,9 @@ class User extends Model {
     public function staff() {
         return $this->hasOne(Staff::class, 'username', 'username');
     }
+
+    public function hasRole($role): bool {
+        $role = (array) $role;
+        return in_array($this->role, $role);
+    }
 }

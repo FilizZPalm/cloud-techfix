@@ -55,19 +55,6 @@ class DatabaseSeeder extends Seeder {
             ],
         ]);
 
-        DB::table('tecnico')->insert([
-            [
-                'username' => 'tecnico1',
-                'dataDiNascita' => '2000-01-01',
-                'specializzazione' => 'Tecnico Certificato IOS'
-            ],
-            [
-                'username' => 'tecnico2',
-                'dataDiNascita' => '2000-04-01',
-                'specializzazione' => 'Tecnico hardware'
-            ],
-        ]);
-
         DB::table('centro_assistenza')->insert([
             [
                 'nome' => 'Centro Assistenza Apple Roma',
@@ -87,6 +74,25 @@ class DatabaseSeeder extends Seeder {
             ],
         ]);
         
+        // Recupera gli ID generati per i centri di assistenza
+        $romaId = DB::table('centro_assistenza')->where('nome', 'Centro Assistenza Apple Roma')->value('id');
+        $milanoId = DB::table('centro_assistenza')->where('nome', 'Centro Assistenza Milano')->value('id');
+        
+        // Associa i tecnici ai centri di assistenza
+        DB::table('tecnico')->insert([
+            [
+                'username' => 'tecnico1',
+                'dataDiNascita' => '2000-01-01',
+                'specializzazione' => 'Tecnico Certificato IOS',
+                'id_centro_assistenza' => $romaId, // Associa al centro di Roma
+            ],
+            [
+                'username' => 'tecnico2',
+                'dataDiNascita' => '2000-04-01',
+                'specializzazione' => 'Tecnico hardware',
+                'id_centro_assistenza' => $milanoId, // Associa al centro di Milano
+            ],
+        ]);
         // Inserimento dei prodotti e recupero degli ID generati
         $iphoneId = DB::table('prodotto')->insertGetId([
             'nome' => 'iPhone 14',

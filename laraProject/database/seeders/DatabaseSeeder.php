@@ -11,59 +11,148 @@ class DatabaseSeeder extends Seeder {
     /**
      * Run the database seeds.
      */
-    const DESCPROD = '<p>Sed lacus. Donec lectus. Nullam pretium nibh ut turpis. Nam bibendum. In nulla tortor, elementum vel, tempor at, varius non, purus. Mauris vitae nisl nec metus placerat consectetuer. Donec ipsum. Proin imperdiet est. Phasellus dapibus semper urna. Pellentesque ornare, orci in consectetuer hendrerit, urna elit eleifend nunc, ut consectetuer nisl felis ac diam. Etiam non felis. Donec ut ante. In id eros. Suspendisse lacus turpis, cursus egestas at sem. Phasellus pellentesque. Mauris quam enim, molestie in, rhoncus ut, lobortis a, est. </p><p>Sed lacus. Donec lectus. Nullam pretium nibh ut turpis. Nam bibendum. In nulla tortor, elementum vel, tempor at, varius non, purus. Mauris vitae nisl nec metus placerat consectetuer. Donec ipsum. Proin imperdiet est. Phasellus dapibus semper urna. Pellentesque ornare, orci in consectetuer hendrerit, urna elit eleifend nunc, ut consectetuer nisl felis ac diam. Etiam non felis. Donec ut ante. In id eros. Suspendisse lacus turpis, cursus egestas at sem. Phasellus pellentesque. Mauris quam enim, molestie in, rhoncus ut, lobortis a, est.</p>';
-
+    
     public function run(): void {
-
-        DB::table('category')->insert([
-            ['catId' => 1, 'name' => 'Computer', 'parId' => 0, 'desc' => 'Desktop, Laptop, Netbook'],
-            ['catId' => 2, 'name' => 'Periferiche', 'parId' => 0, 'desc' => 'Hard Disk, Tastiere, Mouse'],
-            ['catId' => 3, 'name' => 'Desktop', 'parId' => 1, 'desc' => 'Descrizione dei Prodotti Desktop'],
-            ['catId' => 4, 'name' => 'Laptop', 'parId' => 1, 'desc' => 'Descrizione dei Prodotti Laptop'],
-            ['catId' => 5, 'name' => 'NetBook', 'parId' => 1, 'desc' => 'Descrizione dei Prodotti Netbook'],
-            ['catId' => 6, 'name' => 'HardDisk', 'parId' => 2, 'desc' => 'Descrizione dei Dischi Rigidi'],
+        DB::table('user')->insert([
+            [
+                'username' => 'staff1',
+                'password' => Hash::make('password1'), // Hash della password
+                'nome' => 'Mario',
+                'cognome' => 'Rossi',
+                'role' => 'staff'
+            ],
+            [
+                'username' => 'staff2',
+                'password' => Hash::make('password2'),
+                'nome' => 'Luca',
+                'cognome' => 'Bianchi',
+                'role' => 'staff'
+            ],
+            [
+                'username' => 'tecnico1',
+                'password' => Hash::make('password1'),
+                'nome' => 'Giulia',
+                'cognome' => 'Verdi',
+                'role' => 'tecnico'
+            ],
+            [
+                'username' => 'tecnico2',
+                'password' => Hash::make('password2'),
+                'nome' => 'Sara',
+                'cognome' => 'Neri',
+                'role' => 'tecnico'
+            ],
         ]);
 
-        DB::table('product')->insert([
-            ['name' => 'NetBook Modello2', 'catId' => 5,
-                'descShort' => 'Caratteristiche NetBook2', 'descLong' => self::DESCPROD,
-                'price' => 219.34, 'discountPerc' => 12, 'discounted' => 0, 'image' => ''],
-            ['name' => 'HardDisk Modello2', 'catId' => 6,
-                'descShort' => 'Caratteristiche HardDisk2', 'descLong' => self::DESCPROD,
-                'price' => 86.37, 'discountPerc' => 15, 'discounted' => 1, 'image' => 'Italy.gif'],
-            ['name' => 'Desktop Modello1', 'catId' => 3,
-                'descShort' => 'Caratteristiche Desktop1', 'descLong' => self::DESCPROD,
-                'price' => 1230.49, 'discountPerc' => 25, 'discounted' => 1, 'image' => 'Brazil.gif'],
-            ['name' => 'Laptop Modello1', 'catId' => 4,
-                'descShort' => 'Caratteristiche Laptop1', 'descLong' => self::DESCPROD,
-                'price' => 455.37, 'discountPerc' => 17, 'discounted' => 1, 'image' => ''],
-            ['name' => 'Laptop Modello2', 'catId' => 4,
-                'descShort' => 'Caratteristiche Laptop1', 'descLong' => self::DESCPROD,
-                'price' => 1889.67, 'discountPerc' => 15, 'discounted' => 1, 'image' => 'Argentina.gif'],
-            ['name' => 'Netbook Modello3', 'catId' => 5,
-                'descShort' => 'Caratteristiche NetBook3', 'descLong' => self::DESCPROD,
-                'price' => 259.99, 'discountPerc' => 17, 'discounted' => 0, 'image' => 'Red Apple.gif'],
-            ['name' => 'Laptop Modello3', 'catId' => 4,
-                'descShort' => 'Caratteristiche Laptop3', 'descLong' => self::DESCPROD,
-                'price' => 998.99, 'discountPerc' => 23, 'discounted' => 1, 'image' => 'UK.gif'],
-            ['name' => 'HardDisk Modello1', 'catId' => 6,
-                'descShort' => 'Caratteristiche HardDisk1', 'descLong' => self::DESCPROD,
-                'price' => 88.93, 'discountPerc' => 5, 'discounted' => 0, 'image' => 'USA.gif'],
-            ['name' => 'HardDisk Modello4', 'catId' => 6,
-                'descShort' => 'Caratteristiche HardDisk4', 'descLong' => self::DESCPROD,
-                'price' => 78.66, 'discountPerc' => 7, 'discounted' => 1, 'image' => 'Ukraine.gif']
+        DB::table('staff')->insert([
+            [
+                'username' => 'staff1',
+                
+            ],
+            [
+                'username' => 'staff2',
+                
+            ],
+        ]);
+
+        DB::table('tecnico')->insert([
+            [
+                'username' => 'tecnico1',
+                'dataDiNascita' => '2000-01-01',
+                'specializzazione' => 'Tecnico Certificato IOS'
+            ],
+            [
+                'username' => 'tecnico2',
+                'dataDiNascita' => '2000-04-01',
+                'specializzazione' => 'Tecnico hardware'
+            ],
+        ]);
+
+        DB::table('centro_assistenza')->insert([
+            [
+                'nome' => 'Centro Assistenza Apple Roma',
+                'indirizzo' => 'Via Roma 123, Roma',
+            ],
+            [
+                'nome' => 'Centro Assistenza Milano',
+                'indirizzo' => 'Corso Milano 45, Milano',
+            ],
+            [
+                'nome' => 'Centro Assistenza Napoli',
+                'indirizzo' => 'Piazza Napoli 12, Napoli',
+            ],
+            [
+                'nome' => 'Centro Assistenza Torino',
+                'indirizzo' => 'Via Torino 89, Torino',
+            ],
         ]);
         
-        DB::table('users')->insert([
-            ['name' => 'Alex', 'surname' => 'Verdi', 'email' => 'alex@verdi.it', 'username' => 'alexalex',
-                'password' => Hash::make('alexalex'), 'role' => 'user', 'created_at' => date("Y-m-d H:i:s"),
-                'updated_at' => date("Y-m-d H:i:s")],
-            ['name' => 'Marco', 'surname' => 'Bianchi', 'email' => 'marco@bianchi.it', 'username' => 'useruser',
-                'password' => Hash::make('useruser'), 'role' => 'user', 'created_at' => date("Y-m-d H:i:s"),
-                'updated_at' => date("Y-m-d H:i:s")],
-            ['name' => 'Mario', 'surname' => 'Rossi', 'email' => 'mario@rossi.it', 'username' => 'adminadmin',
-                'password' => Hash::make('adminadmin'), 'role' => 'admin', 'created_at' => date("Y-m-d H:i:s"),
-                'updated_at' => date("Y-m-d H:i:s")]
+        // Inserimento dei prodotti e recupero degli ID generati
+        $iphoneId = DB::table('prodotto')->insertGetId([
+            'nome' => 'iPhone 14',
+            'descrizione' => 'Smartphone di ultima generazione con display OLED e fotocamera avanzata.',
+            'note_tecniche' => 'Capacità batteria: 3200mAh, Processore: A16 Bionic.',
+            'modalita_installazione' => 'Configurazione guidata all’accensione del dispositivo.',
+            'foto' => '/images/products/iphone14.jpg',
         ]);
+
+        $macbookId = DB::table('prodotto')->insertGetId([
+            'nome' => 'MacBook Pro 16"',
+            'descrizione' => 'Laptop professionale con chip M1 Pro e display Retina XDR.',
+            'note_tecniche' => 'Memoria: 16GB, Storage: 512GB SSD, Chip: M1 Pro.',
+            'modalita_installazione' => 'Accensione e configurazione tramite macOS Setup Assistant.',
+            'foto' => '/images/products/macbookpro16.jpg',
+        ]);
+
+        $appleWatchId = DB::table('prodotto')->insertGetId([
+            'nome' => 'Apple Watch Series 8',
+            'descrizione' => 'Smartwatch con funzioni avanzate di salute e fitness.',
+            'note_tecniche' => 'Sensori: ECG, rilevamento cadute, SpO2.',
+            'modalita_installazione' => 'Accoppia con iPhone tramite l’app Watch.',
+            'foto' => '/images/products/applewatch8.jpg',
+        ]);
+
+        // Inserimento dei malfunzionamenti con riferimento agli ID dei prodotti
+        DB::table('malfunzionamento')->insert([
+            [
+                'nome' => 'Schermo rotto',
+                'descrizione' => 'Lo schermo è incrinato o non risponde al tocco.',
+                'nome_soluzione' => 'Sostituzione dello schermo',
+                'descrizione_soluzione' => 'Rimuovere lo schermo rotto e installarne uno nuovo.',
+                'id_prodotto' => $iphoneId,
+            ],
+            [
+                'nome' => 'Problema batteria',
+                'descrizione' => 'La batteria si scarica rapidamente o non si ricarica.',
+                'nome_soluzione' => 'Sostituzione della batteria',
+                'descrizione_soluzione' => 'Sostituire la batteria con una nuova.',
+                'id_prodotto' => $macbookId,
+            ],
+            [
+                'nome' => 'Errore software',
+                'descrizione' => 'Il dispositivo si blocca frequentemente o presenta errori.',
+                'nome_soluzione' => 'Aggiornamento software',
+                'descrizione_soluzione' => 'Ripristinare il software e aggiornare all’ultima versione.',
+                'id_prodotto' => $appleWatchId,
+            ],
+        ]);
+
+        DB::table('accesso_prodotto')->insert([
+            [
+                'id_prodotto' => $iphoneId, 
+                'username_staff' =>  'staff1', 
+            ],
+            [
+                'id_prodotto' => $macbookId, 
+                'username_staff' => 'staff2',
+            ],
+            [
+                'id_prodotto' => $appleWatchId,
+                'username_staff' => 'staff1',
+            ],
+        ]);
+    
     }
 }
+
+

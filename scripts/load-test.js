@@ -23,7 +23,7 @@ const catalogoDuration = new Trend('catalogo_duration', true);
 const ricercaDuration = new Trend('ricerca_duration', true);
 
 export const options = {
-  vus: 50,
+  vus: 200,
   duration: '3m',
   insecureSkipTLSVerify: true,
   thresholds: {
@@ -82,6 +82,6 @@ export default function () {
   ricercaErrors.add(ricercaRes.status !== 200 && ricercaRes.status !== 302);
   ricercaDuration.add(ricercaRes.timings.duration);
 
-  // Pausa tra iterazioni (simula think time utente: 1-3 secondi)
-  sleep(Math.random() * 2 + 1);
+  // Pausa tra iterazioni (simula think time utente: 0.5-1.5 secondi)
+  sleep(Math.random() * 1 + 0.5);
 }

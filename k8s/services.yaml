@@ -1,0 +1,37 @@
+# k8s/services.yaml
+# ClusterIP services for Nginx and Laravel pods.
+# Requirements: 4.1, 4.2
+---
+# nginx-service: receives traffic from the Traefik Ingress Controller and
+# forwards it to Nginx pods on their container port 8080.
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: techfix
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+# laravel-service: receives FastCGI traffic from Nginx pods and
+# forwards it to Laravel (PHP-FPM) pods on port 9000.
+apiVersion: v1
+kind: Service
+metadata:
+  name: laravel-service
+  namespace: techfix
+spec:
+  type: ClusterIP
+  selector:
+    app: laravel
+  ports:
+    - name: fpm
+      protocol: TCP
+      port: 9000
+      targetPort: 9000

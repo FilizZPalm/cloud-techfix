@@ -1,0 +1,667 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+
+*{
+    margin: 0;
+    padding:0;
+}
+
+a{
+    cursor: pointer;
+    text-decoration: none; 
+    color: inherit;
+}
+
+/*stile per la top bar*/
+
+.top_bar{
+    padding-top: 40px;
+    padding-bottom: 40px;
+    background-color: #E8F0FE;
+}
+
+.top_bar h1{
+    text-align: center;
+    font-family: "Libre Baskerville", serif;
+    font-size: 40px; /* Adattato al font dell'immagine */
+    color: #8E8E93;
+    font-weight: normal; /* Assicura un peso simile a quello dell'immagine */
+    letter-spacing: -0.05em; /* Adatta la spaziatura tra le lettere */
+    line-height: 1; /* Per allineare meglio */
+    margin-top: 20px;
+}
+
+.top_bar img{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 150px;    
+    height: fit-content;
+}
+
+/*Stile per la nav bar */
+
+.nav_bar{
+    z-index: 1;
+    overflow: hidden;
+    position: sticky;
+    top: 0;
+}
+
+.nav_bar table{
+    border-spacing: 0;
+    width: 100%;
+}
+
+.nav_bar td{
+    text-align: center;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    font-size: 20px;
+    transition: 0.5s;
+    font-style: bold;
+}
+
+.nav_bar a{
+    padding-top: 10px;
+    padding-bottom: 10px;
+    display: block; 
+    width: 100%;
+}
+
+.nav_bar button{
+    font-family: inherit;
+    font-size: inherit; 
+    color: inherit; 
+    background: none;
+    border: none; 
+    padding: 0;
+    margin: 0;   
+    padding-top: 10px;
+    padding-bottom: 10px;
+    display: block; 
+    width: 100%;
+}
+
+.nav_bar td:hover{
+    color:#8E8E93;
+    background-color: #E8F0FE;
+}
+
+.item_not_selected{
+    color:#E8F0FE;
+    background-color: #8E8E93;
+}
+
+
+
+.item_selected{
+    color:#8E8E93;
+    background-color: #E8F0FE;
+}
+
+
+.image_content{
+    overflow: hidden;
+}
+
+/*Stile per il footer */
+
+.footer {
+    background-color: #8E8E93; /* Cambiato a un grigio più scuro */
+    padding: 20px 0;
+}
+
+.footer_title {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.footer_text {
+    font-family: "Libre Baskerville", "Times New Roman", Times, serif;
+    font-size: 20px; /* Reso il testo più grande */
+    color: #E8F0FE;
+    padding-right: 10px;
+    padding-left: 20px;
+}
+
+.footer_divider {
+    flex-grow: 1;
+    height: 1px;
+    background-color: #FFFFFF; /* Colore più visibile */
+}
+
+.footer table {
+    width: 100%;
+    padding: 10px 20px;
+    text-align: center; /* Centrato il contenuto */
+    border-spacing: 30px 15px; /* Spaziatura uniforme */
+}
+
+.footer_image {
+    vertical-align: middle;
+    text-align: center;
+}
+
+.footer img {
+    width: 50px;
+    height: auto;
+}
+
+.footer_information_title {
+    font-family: "Libre Baskerville", "Times New Roman", Times, serif;
+    font-size: 16px; /* Reso il testo più grande */
+    color: #E8F0FE;
+    margin-bottom: 5px;
+}
+
+.footer_information_text {
+    font-family: "Libre Baskerville", "Times New Roman", Times, serif;
+    font-size: 14px; /* Reso il testo più leggibile */
+    color: #FFFFFF;
+    text-decoration: none;
+}
+
+.footer_information_text:hover {
+    text-decoration: underline; /* Aggiunto hover per link */
+}
+
+.footer_information {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #E8F0FE;
+}
+/* testi */
+.normal_text_corp{
+    margin-bottom: 20px;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    color: #8E8E93;
+    font-size: 18px;
+    text-align: center;
+}
+
+.content{
+    margin: 100px 15%;
+}
+
+/*immagine home*/
+
+.image img {
+    display: block; /* Elimina lo spazio extra sotto l'immagine */
+    margin: 0 auto; /* Centra l'immagine orizzontalmente */
+    height: auto; /* Mantiene le proporzioni */
+    max-width: 100%; /* Evita che l'immagine esca dai confini */
+}
+
+
+
+
+
+/* ====== Catalogo Generale ====== */
+.catalogo-container {
+    margin: 0 auto; /* Centra il contenitore */
+    padding: 5%; /* Spazio interno */
+    background-color: #F8F9FA; /* Sfondo chiaro */
+}
+
+.catalogo-container h1 {
+    text-align: center; /* Centra il titolo */
+    font-family: "Libre Baskerville", "Times New Roman", Times, serif;
+    font-size: 36px;
+    color: #8E8E93;
+    margin-bottom: 20px;
+}
+
+/* ====== Layout Orizzontale del Prodotto ====== */
+.prodotti {
+    display: flex;
+    flex-direction: column; /* Ogni prodotto è una riga */
+    gap: 20px; /* Spazio tra le righe */
+}
+
+.product-row {
+    display: grid; /* Usa griglia per disposizione delle colonne */
+    grid-template-columns: 200px 1fr 150px; /* Definisce la larghezza delle colonne */
+    align-items: center; /* Centra verticalmente */
+    padding: 4%;
+    background-color: #FFFFFF; /* Sfondo della card */
+    border: 1px solid #DADADA; /* Bordo leggero */
+    border-radius: 10px; /* Angoli arrotondati */
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* Ombra leggera */
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+
+
+/* ====== Colonna Immagine ====== */
+.product-image-col {
+    margin-right: 20px; /* Spazio tra immagine e testo */
+}
+
+.product-image-col img {
+    width: 100%; /* Immagine responsive */
+    height: auto; /* Mantiene proporzioni */
+    border-radius: 5px; /* Angoli arrotondati */
+}
+
+/* ====== Colonna Info Prodotto ====== */
+.product-info-col h2 {
+    font-family: "Libre Baskerville", "Times New Roman", Times, serif; /* Font elegante */
+    font-size: 20px; /* Testo grande per il nome */
+    color: #333333; /* Colore scuro per leggibilità */
+    margin: 0 0 10px 0; /* Spazio sotto il titolo */
+}
+
+.product-info-col p {
+    font-family: Arial, sans-serif; /* Font leggibile */
+    font-size: 14px; /* Testo moderato */
+    color: #555555; /* Grigio per leggibilità */
+    line-height: 1.6; /* Altezza della linea per facilità di lettura */
+    margin: 5px 0; /* Spazio sopra e sotto */
+}
+
+/* ====== Colonna Bottone ====== */
+.product-button-col {
+    text-align: center; /* Centra il bottone */
+}
+
+.product-button {
+    display: inline-block; /* Simula un bottone */
+    border:none;
+    cursor: pointer;
+    background-color: #8E8E93; /* Grigio scuro */
+    color: #FFFFFF; /* Testo bianco */
+    font-family: Arial, sans-serif; /* Font moderno */
+    font-size: 14px; /* Dimensione testo */
+    padding: 10px 10px; /* Spazio interno */
+    border-radius: 5px; /* Angoli arrotondati */
+    text-decoration: none; /* Rimuove la sottolineatura */
+}
+.button_container {
+    display: flex;
+    justify-content: center;   /* Allinea orizzontalmente al centro */
+    align-items: center;       /* Allinea verticalmente al centro */
+    margin-top: 10px;
+}
+
+
+.product-button:hover {
+    background-color: #6E6E75; /* Colore più scuro su hover */
+}
+
+/* ====== Paginazione ====== */
+/* Stile della Paginazione */
+.pagination {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.page_number_container, .page_number_selected {
+    display: inline-block;
+    padding: 10px 15px;
+    margin: 0 5px;
+    background-color: #ffffff;
+    color: #8E8E93;
+    font-size: 16px;
+    font-weight: bold;
+    border: 1px solid #8E8E93;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.page_number_container:hover {
+    background-color: #8E8E93;
+    color: #ffffff;
+}
+
+.page_number_selected {
+    background-color: #8E8E93 !important;
+    color: #ffffff !important;
+    border-color: #8E8E93 !important;
+}
+
+
+
+/* Stile tabella */
+.stile_tabella {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.stile_tabella tr {
+    border-bottom: 1px solid #8E8E93;
+}
+
+.stile_tabella td {
+    padding: 10px 15px;
+    vertical-align: middle;
+    color: #8E8E93; /* Colore testo più scuro per migliore contrasto */
+    font-size: 16px;
+}
+.stile_tabella_checkbox{
+    width: 100%;
+    margin-bottom: 100px;
+    border-collapse: collapse;
+}
+
+.stile_tabella_checkbox input[type=checkbox]{
+    cursor: pointer;
+}
+
+.stile_tabella_checkbox tr{
+    border-bottom: 2px solid #8E8E93;
+}
+
+.stile_tabella_checkbox th{
+    text-align: left;
+    font-size: 23px;
+    color: #8E8E93;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    padding: 20px;
+    border-bottom: 2px solid #8E8E93;
+}
+
+.stile_tabella_checkbox td{
+    text-align: left;
+    font-size: 23px;
+    color: #8E8E93;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    padding: 20px;
+    border-bottom: 2px solid #8E8E93;
+}
+
+
+
+
+
+
+
+/* Contenitore scrollabile */
+.table-scroll-container {
+    max-height: 300px; /* Altezza massima per abilitare lo scroll */
+    overflow-y: auto; /* Scroll verticale */
+    overflow-x: hidden; /* Disabilita lo scroll orizzontale */
+}
+
+/* Stile per tabella con html builder */
+.stile_tabella_html_text{
+    padding: 5px;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    color: #8E8E93;
+    font-size: 23px;
+    border: none;
+    width: 100%; /* Imposta la larghezza al 100% */
+   
+}
+
+.stile_tabella_html_title {
+    display: block;
+    font-size: 25px;
+    width: 100%;
+    margin-bottom: 5px;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    color: #8E8E93;
+    border-bottom: 2px solid #8E8E93;
+    padding-bottom: 5px;
+    font-weight: bold;
+}
+
+
+
+
+/* login*/
+
+.wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    background-color: #FFFFFF; /* Colore di sfondo per il wrapper */
+}
+
+
+.input-box{
+    width: 400px;
+    height: 478.63px; 
+    float: left;
+    background-color: #FFFFFF;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.input-box h1{
+    font-size: 28px;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    color:#8E8E93;
+    padding: 0px 30px 50px 30px;
+    text-align: center;
+}
+
+.input-box span{
+    position: relative;
+    display: block; 
+    
+}
+
+.wrapper img{
+    height:100%;
+    width: 600px;
+}
+
+.input{
+    width: 80%;
+    height: 30px;
+    background-color: #8E8E93;
+    border-radius: 20px;
+    font-size:18px;
+    color:#FFFFFF;
+    margin: 20px 20px 20px 20px;
+    padding-left: 5px;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    border-color: transparent;
+}
+
+.input-box label{
+    position: absolute;
+    top: 48%;
+    left: 30px;
+    transform: translateY(-50%);
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    pointer-events: none;
+    color: #FFFFFF;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    font-size:1em;
+    font-weight: 550;
+    transition: 0.5s;
+    -webkit-transition: 0.5s;
+    -moz-transition: 0.5s;
+}
+
+.input-box input:focus~label,
+.input-box input:valid~label{
+    top: 9px;
+    color: white;
+}
+
+.error_text_login{
+    color: #8E8E93;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    margin: 10px;
+}
+
+/* bottone */
+.btn {
+    width: fit-content;
+    height: fit-content;
+    background-color: #8E8E93;
+    border-radius: 20px;
+    font-size: 18px;
+    padding: 12px;
+    color:#FFFFFF;
+    margin: 20px 20px 20px 20px;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif; 
+    border: none;
+    outline: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+
+
+
+
+
+
+
+
+/* Contenitore principale della scheda tecnica */
+.scheda-tecnica-container {
+    margin: 0 auto;
+    max-width: 70%;
+}
+
+/* Titolo principale */
+.scheda-tecnica-title {
+    text-align: center;
+    font-family: "Libre Baskerville", "Times New Roman", Times, serif;
+    font-size: 36px;
+    color: #8E8E93;
+    margin-bottom: 20px;
+}
+
+/* Riga con immagine e nome */
+.scheda-tecnica-header {
+    display: flex;
+    align-items: center; 
+    gap: 20px; 
+    margin-bottom: 20px;
+}
+
+/* Colonna Immagine */
+.scheda-tecnica-image img {
+    width: 300px; 
+    height: auto; 
+    border-radius: 5px;
+}
+
+/* Nome Prodotto */
+.scheda-tecnica-nome {
+    font-family: "Libre Baskerville", "Times New Roman", Times, serif;
+    font-size: 24px;
+    color: #333333;
+    margin: 0;
+}
+
+/* Stile per Sezioni Informative */
+.scheda-tecnica-info h3 {
+    font-size: 18px;
+    color: #8E8E93;
+    margin-top: 20px;
+}
+
+.scheda-tecnica-info p {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    color: #555555;
+    line-height: 1.6;
+}
+
+/* Bottone */
+.scheda-tecnica-button-col {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.scheda-tecnica-btn {
+    display: inline-block;
+    border: none; /* Rimuove il bordo */
+    background-color: #8E8E93;
+    color: #FFFFFF;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.scheda-tecnica-btn:hover {
+    background-color: #6E6E75;
+}
+
+.btn_logout {
+    background: none;
+    border: none;
+    color: #E8F0FE; /* Colore simile agli altri link non selezionati */
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+    padding: 10px 20px; /* Padding simile agli altri elementi */
+    margin: 0;
+    text-decoration: none; /* Rimuove l'underline */
+    display: inline-block; /* Assicura che si comporti come un elemento in linea */
+    width: 100%;
+    text-align: center;
+}
+
+.btn_logout:hover {
+    color: #8E8E93; /* Colore per quando il mouse è sopra, simile agli altri item */
+    background-color: #E8F0FE; /* Sfondo simile agli altri elementi hover */
+}
+
+
+.btn-alternativo-noborder{
+    background: none;
+    border: none;
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin-top: 5px;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    color:#8E8E93;
+    font-size: 23px;
+    border-radius: 20px;
+}
+
+.button_container_scheda_tecnica {
+    display: flex;
+    justify-content: center;   /* Allinea orizzontalmente al centro */
+    align-items: center;       /* Allinea verticalmente al centro */
+    margin-top: 10px;
+    gap: 10px;                 /* aggiunge spazio tra i pulsanti */
+    margin-bottom: 20px;       /* aggiunge spazio sotto i pulsanti */
+}
+
+.button_container_scheda_tecnica form {
+    display: flex;
+    gap: 10px;                 /* aggiunge spazio tra i pulsanti */
+}
+
+.btn-alternativo {
+    width: fit-content;
+    display: flex;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 5px;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 20px;
+    background-color: #FFFFFF;
+    border:2px solid #8E8E93;
+    font-family: "Montserrat", Arial, Helvetica, sans-serif;
+    color: #8E8E93;
+    font-size: 18px;
+  }
+
+
+

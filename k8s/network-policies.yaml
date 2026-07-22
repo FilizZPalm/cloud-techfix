@@ -1,0 +1,114 @@
+# k8s/network-policies.yaml
+# NetworkPolicy manifests for the TechFix application namespace.
+#
+# Calico CNI is required for NetworkPolicy enforcement (k3s is installed
+# with --flannel-backend=none --disable-network-policy; Calico is applied
+# separately via calico.yaml).
+#
+# Once any NetworkPolicy selects a pod, Kubernetes/Calico switches to
+# deny-by-default for the selected traffic direction — only the traffic
+# explicitly listed below is allowed.
+#
+# Requirements: 8.1, 8.2, 8.3, 8.4
+
+---
+# Policy 1: allow-nginx-to-laravel
+# Allows ingress traffic to Laravel pods ONLY from Nginx pods (same namespace).
+# Any other pod that attempts a TCP connection to Laravel:9000 is dropped.
+# Requirements: 8.1, 8.2
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-nginx-to-laravel
+  namespace: techfix
+spec:
+  # Selects all pods with label app=laravel (Laravel PHP-FPM pods)
+  podSelector:
+    matchLabels:
+      app: laravel
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: nginx
+      ports:
+        - protocol: TCP
+          port: 9000
+
+---
+# Policy 2: laravel-egress-policy
+# Restricts outbound traffic from Laravel pods to only:
+#   - MariaDB Primary  (10.42.0.1:3306) — writes
+#   - MariaDB Replica  (10.42.0.1:3307) — reads
+#   - DNS              (any destination, port 53 UDP + TCP) — service discovery
+#
+# 10.42.0.1 is the k3s node host IP in the pod network (gateway for pod CIDR
+# 10.42.0.0/16). Both MariaDB instances run on the same VM at this address.
+#
+# The DNS rule intentionally omits a `to` selector so it matches any
+# destination — this covers both CoreDNS pods inside the cluster and any
+# upstream DNS resolver that CoreDNS may forward to.
+#
+# Requirements: 8.3, 8.4
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: laravel-egress-policy
+  namespace: techfix
+spec:
+  podSelector:
+    matchLabels:
+      app: laravel
+  policyTypes:
+    - Egress
+  egress:
+    # Allow MySQL Primary (port 3306) and MySQL Replica (port 3307) on the
+    # k3s node host IP (10.42.0.1 — gateway of the k3s pod network).
+    - to:
+        - ipBlock:
+            cidr: 10.42.0.1/32
+      ports:
+        - protocol: TCP
+          port: 3306
+        - protocol: TCP
+          port: 3307
+    # Allow DNS for service discovery (CoreDNS inside the cluster and
+    # upstream resolvers). No destination restriction — port 53 only.
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Policy 3: allow-ingress-to-nginx
+# Allows ingress traffic to Nginx pods ONLY from pods in the kube-system
+# namespace (i.e., the Traefik Ingress Controller).
+# All other sources (including pods inside techfix namespace) are blocked.
+# Requirements: 8.3, 8.4 (and implicit from Ingress Controller design)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-nginx
+  namespace: techfix
+spec:
+  # Selects all pods with label app=nginx (Nginx reverse-proxy pods)
+  podSelector:
+    matchLabels:
+      app: nginx
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        # Allow traffic only from pods in the kube-system namespace.
+        # kube-system carries the built-in label kubernetes.io/metadata.name: kube-system
+        # (applied automatically by Kubernetes; also set explicitly on the
+        # kube-system namespace for Calico compatibility).
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8080

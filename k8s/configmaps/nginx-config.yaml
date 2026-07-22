@@ -1,0 +1,62 @@
+# k8s/configmaps/nginx-config.yaml
+# ConfigMap that holds the Nginx virtual-host configuration.
+# Mounted into the Nginx pod at /etc/nginx/conf.d/default.conf via volumeMount.
+# Requirements: 4.3, 4.4
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: techfix
+data:
+  default.conf: |
+    server {
+        # Listen on port 8080 (>= 1024, no NET_BIND_SERVICE capability required)
+        listen 8080;
+
+        server_name _;
+
+        root /var/www/html/public;
+        index index.php;
+
+        # Maximum allowed request body size (file uploads, etc.)
+        client_max_body_size 10M;
+
+        # -----------------------------------------------------------------------
+        # Static assets — served directly from disk, Laravel is never contacted
+        # -----------------------------------------------------------------------
+        location ~* \.(css|js|png|jpg|gif|webp|svg|ico|woff|woff2|ttf)$ {
+            try_files $uri =404;
+            access_log off;
+            expires    1y;
+            add_header Cache-Control "public, immutable";
+        }
+
+        # -----------------------------------------------------------------------
+        # Main entry point — fall back to Laravel front controller
+        # -----------------------------------------------------------------------
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        # -----------------------------------------------------------------------
+        # PHP processing — forward to PHP-FPM in the laravel-service pod
+        # -----------------------------------------------------------------------
+        location ~ \.php$ {
+            fastcgi_pass  laravel-service:9000;
+            fastcgi_index index.php;
+
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            include       fastcgi_params;
+
+            fastcgi_connect_timeout 10s;
+            fastcgi_send_timeout    60s;
+            fastcgi_read_timeout    60s;
+        }
+
+        # -----------------------------------------------------------------------
+        # Security — block hidden files (allow .well-known for ACME challenges)
+        # -----------------------------------------------------------------------
+        location ~ /\.(?!well-known) {
+            deny all;
+        }
+    }

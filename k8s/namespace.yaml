@@ -1,0 +1,11 @@
+# k8s/namespace.yaml
+# Dedicated namespace for all TechFix application resources.
+# The kubernetes.io/metadata.name label is required by NetworkPolicy
+# namespaceSelector rules (used in allow-ingress-to-nginx policy).
+# Requirements: 4.1, 4.2
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: techfix
+  labels:
+    kubernetes.io/metadata.name: techfix

@@ -62,9 +62,13 @@ RUN composer install \
 # laraProject/, so this COPY instruction cannot reach it by construction.
 COPY laraProject/ ./
 
-# Generate the optimised class-map autoloader for production (--no-dev drops
-# development packages from the dump).
-RUN composer dump-autoload --optimize --no-dev
+# Allow Composer to run as root inside the build container
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+# Re-install without dev dependencies and generate the optimised autoloader.
+# --no-scripts prevents artisan package:discover from running during build
+# (it requires DB/env vars). Package discovery runs at container startup instead.
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 
 # -----------------------------------------------------------------------------

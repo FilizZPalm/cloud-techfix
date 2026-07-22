@@ -66,7 +66,7 @@ export default function () {
 
   // Scenario 2: GET ricerca AJAX malfunzionamenti (simula ricerca utente)
   const term = searchTerms[Math.floor(Math.random() * searchTerms.length)];
-  const ricercaRes = http.get(`${BASE_URL}/malfunzionamenti/search?q=${term}`, {
+  const ricercaRes = http.get(`${BASE_URL}/filtra-malfunzionamenti?search=${term}`, {
     tags: { name: 'ricerca_malfunzionamenti' },
     headers: {
       'X-Requested-With': 'XMLHttpRequest',

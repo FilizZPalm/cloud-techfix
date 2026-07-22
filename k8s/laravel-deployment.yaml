@@ -19,6 +19,19 @@ spec:
         runAsNonRoot: true
         runAsUser: 1001
         fsGroup: 1001
+      initContainers:
+        - name: init-storage
+          image: techfix/laravel-app:1.0.0
+          command: ['sh', '-c', 'mkdir -p /var/www/html/storage/framework/views /var/www/html/storage/framework/cache /var/www/html/storage/framework/sessions /var/www/html/storage/logs']
+          volumeMounts:
+            - name: laravel-storage
+              mountPath: /var/www/html/storage
+          securityContext:
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       containers:
         - name: laravel
           image: techfix/laravel-app:1.0.0

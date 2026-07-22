@@ -48,6 +48,8 @@ spec:
               mountPath: /var/www/html/storage
             - name: laravel-cache
               mountPath: /var/www/html/bootstrap/cache
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             tcpSocket:
               port: 9000
@@ -62,4 +64,6 @@ spec:
         - name: laravel-storage
           emptyDir: {}
         - name: laravel-cache
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}

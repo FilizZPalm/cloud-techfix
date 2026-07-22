@@ -38,7 +38,7 @@ Migrazione cloud-native di TechFix, un'applicazione web Laravel 10 per la gestio
 | CNI | Calico (NetworkPolicy support) |
 | App server | PHP-FPM 8.2 (container Docker multi-stage) |
 | Web server | Nginx (reverse proxy, file statici) |
-| Database | MariaDB 10.4 Primary (:3306) + Replica (:3307) |
+| Database | MariaDB 10.11+ Primary (:3306) + Replica (:3307) |
 | Autoscaling | Kubernetes HPA (CPU-based) |
 | Secrets | K8s Secrets + etcd encryption at rest (aescbc) |
 | Load testing | k6 |
@@ -49,8 +49,8 @@ Migrazione cloud-native di TechFix, un'applicazione web Laravel 10 per la gestio
 
 Sulla VM Ubuntu 24.04 devono essere installati:
 
-- `mariadb-server` (10.4+)
-- `docker` (per il build delle immagini)
+- `mariadb-server` (10.11+)
+- `docker` (per il build delle immagini — **avviarlo con** `sudo systemctl start docker`)
 - `k3s` (installato dallo script, richiede `curl`)
 - `kubectl` (incluso con k3s: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml`)
 - `k6` (per il load test della demo di scalabilità)
@@ -102,45 +102,68 @@ TechFix-main/
 
 ## Deployment step-by-step
 
+> **Nota importante:** Tutti gli script `infra/` richiedono `sudo -E` per passare le variabili d'ambiente. Impostare **prima** di tutto:
+> ```bash
+> export DB_PASSWORD="una-password-sicura"
+> export REPL_PASSWORD="una-password-sicura"
+> export DB_PRIMARY_HOST="10.42.0.1"
+> export DB_REPLICA_HOST="10.42.0.1"
+> ```
+
+### 0. Prerequisiti runtime
+
+```bash
+# Avviare Docker (se non parte al boot)
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Aggiungere il proprio utente al gruppo docker (evita sudo per i build)
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
 ### 1. Setup MariaDB Primary
 
 ```bash
-sudo bash infra/setup-mariadb-primary.sh
+sudo -E bash infra/setup-mariadb-primary.sh
 ```
 
-Installa MariaDB, configura `server-id=1`, abilita binlog, crea il database `grp_61_db` e gli utenti `techfix` (applicativo) e `repl` (replication).
-
-> La password dell'utente `techfix` viene letta dalla variabile d'ambiente `DB_PASSWORD`. Impostarla prima dell'esecuzione:
-> ```bash
-> export DB_PASSWORD="una-password-sicura"
-> ```
+Configura `server-id=1`, abilita binlog, crea il database `grp_61_db` e gli utenti `techfix` (applicativo) e `repl` (replication).
 
 ### 2. Importare il dump del database
 
 ```bash
-sudo bash infra/import-db-dump.sh
+sudo -E bash infra/import-db-dump.sh
 ```
 
 Importa `grp_61_db.sql` sul Primary. Verificare:
 
 ```bash
-mysql -u techfix -p grp_61_db -e "SELECT COUNT(*) FROM prodotto;"
-# Atteso: 7
-mysql -u techfix -p grp_61_db -e "SELECT COUNT(*) FROM user;"
+sudo mysql -e "SELECT COUNT(*) FROM grp_61_db.prodotto;"
 # Atteso: 7
 ```
 
 ### 3. Setup MariaDB Replica (porta 3307)
 
 ```bash
-sudo bash infra/setup-mariadb-replica.sh
-sudo bash infra/setup-mariadb-replication.sh
+sudo -E bash infra/setup-mariadb-replica.sh
+sudo -E bash infra/setup-mariadb-replication.sh
 ```
 
-Crea una seconda istanza MariaDB su porta 3307 con `read_only=1` e configura la replication binlog dal Primary. Verificare:
+Crea una seconda istanza MariaDB su porta 3307 con `read_only=1` e configura la replication binlog dal Primary.
+
+> **Nota:** Se il dump è stato importato prima della replication, i dati non si replicano automaticamente. In quel caso, importare manualmente sulla Replica:
+> ```bash
+> sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "CREATE DATABASE IF NOT EXISTS grp_61_db;"
+> sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SET GLOBAL read_only=0;"
+> sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock grp_61_db < grp_61_db.sql
+> sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SET GLOBAL read_only=1;"
+> ```
+
+Verificare:
 
 ```bash
-mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master"
+sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master"
 # Atteso: Slave_IO_Running: Yes, Slave_SQL_Running: Yes, Seconds_Behind_Master: 0
 ```
 

@@ -43,9 +43,9 @@ fi
 
 REPLICA_SOCKET="/var/run/mysqld/mysqld-replica.sock"
 
-# Verify Primary (port 3306) is reachable
-if ! mysqladmin --host=127.0.0.1 --port=3306 --user=root ping --connect-timeout=5 &>/dev/null; then
-    err "MariaDB Primary is not responding on 127.0.0.1:3306. Run setup-mariadb-primary.sh first."
+# Verify Primary (port 3306) is reachable via unix socket
+if ! mysqladmin --user=root ping --connect-timeout=5 &>/dev/null; then
+    err "MariaDB Primary is not responding. Run setup-mariadb-primary.sh first."
 fi
 
 # Verify Replica socket exists and is reachable
@@ -86,9 +86,9 @@ fi
 # ---------------------------------------------------------------------------
 
 if [[ "${SKIP_CONFIGURE}" == "false" ]]; then
-    log "Reading SHOW MASTER STATUS from Primary (127.0.0.1:3306)..."
+    log "Reading SHOW MASTER STATUS from Primary (via unix socket)..."
 
-    MASTER_STATUS=$(mysql --host=127.0.0.1 --port=3306 --user=root \
+    MASTER_STATUS=$(mysql --user=root \
         -e "SHOW MASTER STATUS\G" 2>/dev/null) \
         || err "Failed to execute SHOW MASTER STATUS on Primary."
 

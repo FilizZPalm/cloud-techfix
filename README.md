@@ -113,8 +113,8 @@ Lo script `full-setup.sh` esegue tutto il setup dall'inizio alla fine in un solo
 
 ```bash
 cd ~/TechFix-main
-export DB_PASSWORD="pippo2002"
-export REPL_PASSWORD="pippo2002"
+export DB_PASSWORD="password"
+export REPL_PASSWORD="password"
 sudo -E bash scripts/full-setup.sh
 ```
 

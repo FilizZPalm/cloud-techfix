@@ -49,13 +49,17 @@ Migrazione cloud-native di TechFix, un'applicazione web Laravel 10 per la gestio
 
 Sulla VM Ubuntu 24.04 devono essere installati:
 
-- `mariadb-server` (10.11+)
-- `docker` (per il build delle immagini — **avviarlo con** `sudo systemctl start docker`)
-- `k3s` (installato dallo script, richiede `curl`)
-- `kubectl` (incluso con k3s: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml`)
-- `k6` (per il load test della demo di scalabilità)
-- `openssl` (per generare certificati TLS e chiavi di encryption)
-- `bc` (per il calcolo dimensioni immagini)
+```bash
+sudo apt update && sudo apt install -y mariadb-server mariadb-client docker.io curl wget git openssl bc iptables-persistent
+
+# k6 (load testing)
+sudo gpg -k
+sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+  --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+  | sudo tee /etc/apt/sources.list.d/k6.list
+sudo apt update && sudo apt install -y k6
+```
 
 ---
 
@@ -76,8 +80,7 @@ TechFix-main/
 │   ├── setup-k3s.sh            # Installazione k3s + Calico + etcd encryption
 │   ├── setup-metrics-server.sh  # Metrics server per HPA
 │   ├── setup-firewall.sh       # iptables: accesso MySQL solo da pod network
-│   ├── verify-traefik.sh       # Verifica Traefik Ingress Controller
-│   └── verify-etcd-encryption.sh
+│   └── verify-traefik.sh       # Verifica Traefik Ingress Controller
 ├── k8s/
 │   ├── namespace.yaml           # Namespace: techfix
 │   ├── configmaps/nginx-config.yaml
@@ -89,317 +92,352 @@ TechFix-main/
 │   ├── network-policies.yaml    # Isolamento traffico pod-to-pod
 │   └── metrics-server.yaml
 ├── scripts/
+│   ├── full-setup.sh           # ⭐ Script unico — installa tutto
 │   ├── build-and-import.sh      # Build Docker + import in k3s containerd
 │   ├── create-secrets.sh        # Creazione K8s Secrets (DB, APP, TLS)
 │   ├── deploy.sh               # Deploy orchestrato di tutti i manifest
 │   └── load-test.js            # k6 script per demo scalabilità
+├── tests/
+│   ├── smoke/verify-cluster.sh  # 10 smoke tests post-deployment
+│   └── integration/             # Test HPA scaling e replication
 ├── laraProject/                 # Codice sorgente Laravel 10
 ├── grp_61_db.sql               # Dump database MariaDB
-└── README.md                   # Questo file
+└── README.md
 ```
 
 ---
 
-## Deployment step-by-step
+## Installazione rapida (script unico)
 
-> **Nota importante:** Tutti gli script `infra/` richiedono `sudo -E` per passare le variabili d'ambiente. Impostare **prima** di tutto:
-> ```bash
-> export DB_PASSWORD="una-password-sicura"
-> export REPL_PASSWORD="una-password-sicura"
-> export DB_PRIMARY_HOST="10.42.0.1"
-> export DB_REPLICA_HOST="10.42.0.1"
-> ```
+Lo script `full-setup.sh` esegue tutto il setup dall'inizio alla fine in un solo comando:
+
+```bash
+cd ~/TechFix-main
+export DB_PASSWORD="pippo2002"
+export REPL_PASSWORD="pippo2002"
+sudo -E bash scripts/full-setup.sh
+```
+
+Lo script:
+1. Avvia Docker
+2. Configura MariaDB Primary (binlog, utenti)
+3. Importa il dump `grp_61_db.sql`
+4. Configura MariaDB Replica (porta 3307, read-only)
+5. Configura la replication Primary → Replica
+6. Imposta il firewall iptables
+7. Installa k3s con Calico e etcd encryption
+8. Installa metrics-server (per HPA)
+9. Builda le immagini Docker e le importa in k3s
+10. Crea i Kubernetes Secrets
+11. Deploya l'intera applicazione (namespace, deployments, services, HPA, ingress, network policies)
+12. Genera la cache Laravel e verifica HTTP 200
+
+Al termine, impostare i permessi per kubectl senza sudo:
+
+```bash
+sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+```
+
+---
+
+## Installazione passo per passo
+
+Se preferisci eseguire ogni step manualmente per capire cosa succede:
 
 ### 0. Prerequisiti runtime
 
 ```bash
-# Avviare Docker (se non parte al boot)
 sudo systemctl start docker
 sudo systemctl enable docker
-
-# Aggiungere il proprio utente al gruppo docker (evita sudo per i build)
-sudo usermod -aG docker $USER
-newgrp docker
+echo "127.0.0.1 techfix.local" | sudo tee -a /etc/hosts
 ```
 
-### 1. Setup MariaDB Primary
+### 1. MariaDB Primary
 
 ```bash
+export DB_PASSWORD="pippo2002"
+export REPL_PASSWORD="pippo2002"
 sudo -E bash infra/setup-mariadb-primary.sh
 ```
 
-Configura `server-id=1`, abilita binlog, crea il database `grp_61_db` e gli utenti `techfix` (applicativo) e `repl` (replication).
-
-### 2. Importare il dump del database
+### 2. Import dump database
 
 ```bash
 sudo -E bash infra/import-db-dump.sh
 ```
 
-Importa `grp_61_db.sql` sul Primary. Verificare:
-
+Verifica:
 ```bash
 sudo mysql -e "SELECT COUNT(*) FROM grp_61_db.prodotto;"
 # Atteso: 7
 ```
 
-### 3. Setup MariaDB Replica (porta 3307)
+### 3. MariaDB Replica
 
 ```bash
 sudo -E bash infra/setup-mariadb-replica.sh
 sudo -E bash infra/setup-mariadb-replication.sh
 ```
 
-Crea una seconda istanza MariaDB su porta 3307 con `read_only=1` e configura la replication binlog dal Primary.
-
-> **Nota:** Se il dump è stato importato prima della replication, i dati non si replicano automaticamente. In quel caso, importare manualmente sulla Replica:
-> ```bash
-> sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "CREATE DATABASE IF NOT EXISTS grp_61_db;"
-> sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SET GLOBAL read_only=0;"
-> sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock grp_61_db < grp_61_db.sql
-> sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SET GLOBAL read_only=1;"
-> ```
-
-Verificare:
-
+Se i dati non si sono replicati (dump importato prima della replication):
 ```bash
-sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master"
-# Atteso: Slave_IO_Running: Yes, Slave_SQL_Running: Yes, Seconds_Behind_Master: 0
+sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SET GLOBAL read_only=0;"
+sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock grp_61_db < grp_61_db.sql
+sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SET GLOBAL read_only=1;"
 ```
 
-### 4. Configurare il firewall
+Cambiare il bind-address della Replica per accettare connessioni dai pod:
+```bash
+sudo sed -i 's/bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/' /etc/mysql/replica/my.cnf
+sudo systemctl restart mariadb-replica
+```
+
+Creare l'utente `techfix` sulla Replica:
+```bash
+sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e \
+  "CREATE USER IF NOT EXISTS 'techfix'@'%' IDENTIFIED BY 'pippo2002';
+   GRANT SELECT ON grp_61_db.* TO 'techfix'@'%'; FLUSH PRIVILEGES;"
+```
+
+Verifica:
+```bash
+sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO|Slave_SQL|Seconds_Behind"
+```
+
+### 4. Firewall
 
 ```bash
 sudo bash infra/setup-firewall.sh
+
+# Aggiungere regola per pod network Calico (172.16.0.0/12)
+sudo iptables -I INPUT -p tcp -s 172.16.0.0/12 --dport 3306 -j ACCEPT
+sudo iptables -I INPUT -p tcp -s 172.16.0.0/12 --dport 3307 -j ACCEPT
 ```
 
-Imposta regole iptables che consentono connessioni a MariaDB (porte 3306/3307) solo dal pod network k3s (`10.42.0.0/16`) e dal loopback.
-
-### 5. Installare k3s con Calico e etcd encryption
+### 5. k3s + Calico + etcd encryption
 
 ```bash
 sudo bash infra/setup-k3s.sh
-```
-
-Installa k3s con:
-- `--cluster-init` (etcd embedded per encryption at rest)
-- `--flannel-backend=none` (sostituito da Calico per NetworkPolicy)
-- Encryption at rest con provider `aescbc`
-- Calico CNI
-
-Dopo l'installazione, configurare kubectl:
-
-```bash
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+sudo chmod 644 /etc/rancher/k3s/k3s.yaml
 kubectl get nodes
-# Atteso: nodo in stato Ready
+# Atteso: nodo Ready
 ```
 
-### 6. Installare Metrics Server
+### 6. Metrics server
 
 ```bash
 sudo bash infra/setup-metrics-server.sh
 ```
 
-Necessario per il funzionamento dell'HPA. Verificare:
+### 7. Build immagini Docker
 
 ```bash
-kubectl top nodes
+sudo bash scripts/build-and-import.sh
 ```
 
-### 7. Build immagini Docker e import in k3s
+### 8. Kubernetes Secrets
 
 ```bash
-bash scripts/build-and-import.sh
-```
+export DB_PASSWORD="pippo2002"
+export DB_PRIMARY_HOST="$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')"
+export DB_REPLICA_HOST="${DB_PRIMARY_HOST}"
 
-Costruisce le immagini multi-stage per Laravel (PHP-FPM) e Nginx, le importa nel runtime containerd di k3s. Stampa un avviso se l'immagine Laravel supera 500 MB.
-
-### 8. Creare i Kubernetes Secrets
-
-```bash
-export DB_PASSWORD="una-password-sicura"
-export DB_PRIMARY_HOST="10.42.0.1"
-export DB_REPLICA_HOST="10.42.0.1"
-
+kubectl apply -f k8s/namespace.yaml
 bash scripts/create-secrets.sh
 ```
 
-Crea tre secret nel namespace `techfix`:
-- `techfix-db-secret` — credenziali database (Primary e Replica)
-- `techfix-app-secret` — APP_KEY, APP_ENV, APP_DEBUG, APP_URL
-- `techfix-tls-secret` — certificato TLS self-signed per `techfix.local`
-
-### 9. Deploy dell'applicazione
+### 9. Deploy
 
 ```bash
+# Aggiorna NetworkPolicy con l'IP corretto del nodo
+NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+sed -i "s|10.42.0.1/32|${NODE_IP}/32|g" k8s/network-policies.yaml
+
 bash scripts/deploy.sh
 ```
 
-Applica i manifest Kubernetes nell'ordine corretto:
-1. Namespace
-2. ConfigMaps
-3. NetworkPolicies
-4. Deployments (Laravel + Nginx)
-5. Services
-6. HPA
-7. Ingress
-
-Attende il rollout completo di entrambi i deployment e mostra lo stato finale del cluster.
-
-### 10. Verifica
+### 10. Post-deploy fixes
 
 ```bash
-# Pod in esecuzione
-kubectl get pods -n techfix
+# Patch liveness probe Nginx (TCP invece di HTTP)
+kubectl patch deployment nginx-deployment -n techfix --type='json' -p='[
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe", "value": {"tcpSocket": {"port": 8080}, "initialDelaySeconds": 10, "periodSeconds": 15}},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/readinessProbe", "value": {"tcpSocket": {"port": 8080}, "initialDelaySeconds": 5, "periodSeconds": 10}}
+]'
 
-# HPA attivo
-kubectl get hpa -n techfix
-
-# Accesso HTTPS (con certificato self-signed)
-curl -k https://techfix.local/
-
-# Verifica TLS
-openssl s_client -connect techfix.local:443 -servername techfix.local < /dev/null 2>/dev/null | openssl x509 -noout -subject
+# Genera cache Laravel
+kubectl exec -n techfix deployment/laravel-deployment -c laravel -- php artisan config:cache
+kubectl exec -n techfix deployment/laravel-deployment -c laravel -- php artisan route:cache
 ```
 
-> Per accedere a `techfix.local` dalla macchina locale, aggiungere al file `/etc/hosts`:
-> ```
-> <IP-VM>  techfix.local
-> ```
+---
+
+## Verifica stato del cluster
+
+```bash
+# Permessi kubectl (necessario dopo ogni login)
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+# Tutti i pod
+kubectl get pods -n techfix
+
+# HPA
+kubectl get hpa -n techfix
+
+# Services e Ingress
+kubectl get svc,ingress -n techfix
+
+# CPU e memoria per pod
+kubectl top pods -n techfix
+
+# Test HTTPS
+curl -k https://techfix.local/ -o /dev/null -w "%{http_code}" 2>/dev/null && echo
+
+# Stato replication MariaDB
+sudo mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO|Slave_SQL|Seconds_Behind"
+
+# Log pod Laravel
+kubectl logs -n techfix -l app=laravel --tail=20
+
+# Log pod Nginx
+kubectl logs -n techfix -l app=nginx --tail=20
+
+# NetworkPolicies attive
+kubectl get networkpolicy -n techfix
+
+# Secrets (nomi, non valori)
+kubectl get secrets -n techfix
+```
 
 ---
 
 ## Demo scalabilità (Product Recall)
 
-La demo mostra l'HPA che scala automaticamente i pod Laravel in risposta a un picco di traffico, simulando uno scenario di product recall.
+La demo mostra l'HPA che scala automaticamente i pod Laravel sotto carico, simulando un product recall con alto traffico.
 
-### Avviare il load test
+### Preparazione demo
 
-In un terminale:
+```bash
+# Imposta permessi e KUBECONFIG
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+# Velocizza scale-down per la demo (da 5 min a 30s)
+kubectl patch hpa laravel-hpa -n techfix --type='json' -p='[
+  {"op": "replace", "path": "/spec/behavior/scaleDown/stabilizationWindowSeconds", "value": 30},
+  {"op": "replace", "path": "/spec/behavior/scaleDown/policies/0/periodSeconds", "value": 10}
+]'
+
+# (Opzionale) Velocizza scale-up per la demo
+kubectl patch hpa laravel-hpa -n techfix --type='json' -p='[
+  {"op": "replace", "path": "/spec/behavior/scaleUp/stabilizationWindowSeconds", "value": 15},
+  {"op": "replace", "path": "/spec/behavior/scaleUp/policies/0/value", "value": 4},
+  {"op": "replace", "path": "/spec/behavior/scaleUp/policies/0/periodSeconds", "value": 15}
+]'
+```
+
+### Terminale 1 — Monitoraggio (ogni secondo)
+
+```bash
+watch -n 1 'echo "=== HPA ===" && kubectl get hpa -n techfix && echo "" && echo "=== PODS ===" && kubectl get pods -n techfix -l app=laravel && echo "" && echo "=== CPU per pod ===" && kubectl top pods -n techfix -l app=laravel 2>/dev/null'
+```
+
+### Terminale 2 — Load test
 
 ```bash
 k6 run scripts/load-test.js
 ```
 
-Parametri del test:
-- **50 utenti virtuali** concorrenti
-- **Durata**: 3 minuti
-- **Target**: catalogo prodotti e ricerca malfunzionamenti
-- **Thresholds**: errori < 5%, latenza p95 < 5 secondi
-
-### Monitorare lo scaling
-
-In un secondo terminale:
-
-```bash
-watch -n 5 kubectl get hpa -n techfix
-```
-
-Oppure con dettaglio sui pod:
-
-```bash
-watch -n 5 kubectl get pods -n techfix -l app=laravel
-```
+Parametri: 200 VU, 3 minuti, `https://techfix.local/`
 
 ### Comportamento atteso
 
-1. **Scale-up** (~60-90 secondi dall'inizio del carico): il numero di repliche Laravel aumenta da 2 verso il massimo (fino a 10) man mano che la CPU media supera il 70%
-2. **Durante il test**: tasso di successo HTTP ≥ 95%, latenza p95 < 5 secondi
-3. **Scale-down** (~5-10 minuti dopo la fine del test): le repliche tornano al minimo di 2
+| Fase | Tempo | Repliche | CPU |
+|---|---|---|---|
+| Idle | prima del test | 2 | ~0% |
+| Carico | 0-30s | 2→6 | >100% |
+| Scaling | 30s-2min | 6→10 | ~80% |
+| Fine test | 3min | 10 | scende |
+| Scale-down | +30s-1min | 10→2 | ~0% |
 
-### Verificare le query sulla Replica
+### Risultati attesi k6
 
-Prima e dopo il load test, controllare il contatore `Com_select` sulla Replica per confermare che i nuovi pod distribuiscono le letture:
-
-```bash
-mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SHOW GLOBAL STATUS LIKE 'Com_select';"
-```
+- ✅ `http_req_failed`: 0% (< 5% threshold)
+- ✅ `http_req_duration p(95)`: < 5s
+- ✅ Tutti i checks passed (catalogo + ricerca)
+- ✅ HPA scala fino a 10 pod
 
 ---
 
-## Database — Struttura del dump `grp_61_db.sql`
-
-Il dump è esportato da MariaDB 10.4 tramite phpMyAdmin e contiene le seguenti tabelle:
+## Database — Struttura del dump
 
 | Tabella | Descrizione | Righe |
 |---|---|---|
-| `prodotto` | Catalogo prodotti (id, nome, descrizione FULLTEXT, note_tecniche, foto) | 7 |
+| `prodotto` | Catalogo prodotti | 7 |
 | `user` | Utenti con ruoli (admin, staff, tecnico) | 7 |
-| `malfunzionamento` | Problemi noti associati ai prodotti, con soluzioni | ~10 |
-| `centro_assistenza` | Centri di assistenza (nome, indirizzo) | 3 |
-| `tecnico` | Profilo tecnico (specializzazione, centro di appartenenza) | — |
-| `staff` | Profilo staff (FK a user) | — |
-| `accesso_prodotto` | Associazione staff↔prodotto (chiave composita) | 4 |
-| `migrations` | Tabella Laravel migrations | 8 |
-| `personal_access_tokens` | Tabella Laravel Sanctum | — |
+| `malfunzionamento` | Problemi noti + soluzioni | ~10 |
+| `centro_assistenza` | Centri di assistenza | 3 |
+| `tecnico` | Profilo tecnico | — |
+| `staff` | Profilo staff | — |
+| `accesso_prodotto` | Associazione staff↔prodotto | 4 |
 
-### Credenziali e sicurezza
+### Credenziali
 
-Il dump originale usa le credenziali di sviluppo definite in `include/connect.php`:
-
-```
-$USER = "tweb"
-$PASSWORD = "tweb"
-```
-
-**Queste credenziali NON devono essere usate in produzione.** Nel deploy cloud-native:
-
-1. L'utente MariaDB `techfix` viene creato con una password sicura (impostata via `DB_PASSWORD`)
-2. Le credenziali vengono iniettate nei pod tramite K8s Secrets (`techfix-db-secret`)
-3. Il file `include/connect.php` non viene incluso nelle immagini Docker
-4. L'APP_KEY Laravel è: `base64:bAcPAEd6NqoIKaPrwKfpMzqvfTb3Qi4tFt65IbGyVM0=`
-
-### Utenti precaricati nel dump
-
-| Username | Password (hash bcrypt nel dump) | Ruolo |
-|---|---|---|
-| `admin` | `adminadmin` | admin |
-| `staff1` | (da dump) | staff |
-| `staff2` | (da dump) | staff |
-| `staffstaff` | (da dump) | staff |
-| `tecnico1` | (da dump) | tecnico |
-| `tecnico44` | (da dump) | tecnico |
+Il dump usa `tweb`/`tweb` — **non usate in produzione**. Nel cluster:
+- L'utente `techfix` viene creato con password sicura (`DB_PASSWORD`)
+- Credenziali iniettate via K8s Secrets (`techfix-db-secret`)
+- `include/connect.php` non è incluso nelle immagini Docker
 
 ---
 
 ## Sicurezza
 
-- **SecurityContext**: tutti i container eseguono come non-root (UID 1001), filesystem read-only, capabilities dropped
-- **NetworkPolicy** (Calico): solo Nginx può raggiungere Laravel; egress da Laravel limitato a MySQL e DNS
-- **Firewall iptables**: accesso a MariaDB solo dal pod network k3s
-- **K8s Secrets + etcd encryption at rest**: nessuna credenziale in chiaro nei manifest o nelle immagini
-- **TLS**: Traefik termina HTTPS con certificato self-signed; redirect HTTP→HTTPS
+| Misura | Dettaglio |
+|---|---|
+| Non-root containers | UID 1001, `runAsNonRoot: true` |
+| Read-only filesystem | `readOnlyRootFilesystem: true` + emptyDir per /tmp, storage, cache |
+| Capabilities dropped | `drop: ["ALL"]`, nessuna capability aggiunta |
+| NetworkPolicy (Calico) | Solo Nginx→Laravel:9000, Laravel→MariaDB:3306/3307+DNS |
+| Firewall iptables | MariaDB raggiungibile solo da pod network |
+| Secrets encryption | etcd encryption at rest con aescbc |
+| TLS | Traefik termina HTTPS, redirect HTTP→HTTPS |
 
 ---
 
-## Comandi utili
+## Reset completo (per reinstallazione pulita)
 
 ```bash
-# Stato del cluster
-kubectl get all -n techfix
+# Rimuovi k3s
+sudo /usr/local/bin/k3s-uninstall.sh
 
-# Log di un pod Laravel
-kubectl logs -n techfix -l app=laravel --tail=50
+# Rimuovi MariaDB Replica
+sudo systemctl stop mariadb-replica
+sudo systemctl disable mariadb-replica
+sudo rm -f /etc/systemd/system/mariadb-replica.service
+sudo rm -rf /var/lib/mysql-replica /etc/mysql/replica
+sudo systemctl daemon-reload
 
-# Shell in un pod Laravel
-kubectl exec -it -n techfix deploy/laravel-deployment -- /bin/sh
+# Resetta MariaDB Primary
+sudo mysql -e "DROP DATABASE IF EXISTS grp_61_db;"
+sudo mysql -e "DROP USER IF EXISTS 'techfix'@'%';"
+sudo mysql -e "DROP USER IF EXISTS 'repl'@'127.0.0.1';"
+sudo rm -f /etc/mysql/mariadb.conf.d/99-primary.cnf
+sudo systemctl restart mariadb
 
-# Stato replication MariaDB
-mysql --socket=/var/run/mysqld/mysqld-replica.sock -e "SHOW SLAVE STATUS\G"
+# Pulisci Docker
+sudo docker system prune -af
 
-# Verifica encryption at rest
-sudo bash infra/verify-etcd-encryption.sh
-
-# Rieseguire il deploy dopo modifiche
-bash scripts/build-and-import.sh && bash scripts/deploy.sh
+# Pulisci hosts e firewall
+sudo sed -i '/techfix.local/d' /etc/hosts
+sudo iptables -F INPUT
 ```
 
 ---
 
 ## Note
 
-- Il progetto usa OpenNebula come layer IaaS concettuale (documentato nella relazione del corso). Il deployment reale avviene su una singola VM Ubuntu 24.04.
+- MariaDB gira come servizio systemd sulla VM host (non come StatefulSet in K8s). Scelta architetturale: i DB relazionali classici non si adattano bene al modello Kubernetes per problemi di storage persistente e failover.
 - k3s sostituisce kubeadm per ridurre l'overhead del control plane su macchina singola.
-- MariaDB Primary e Replica girano come processi separati sulla stessa VM — il principio "database fuori dal cluster K8s" è rispettato a livello di isolamento dei processi.
-- I pod raggiungono MariaDB tramite l'IP gateway del nodo host nel pod network di k3s (`10.42.0.1`).
+- I pod raggiungono MariaDB tramite l'IP del nodo host nel pod network (rilevato automaticamente).
+- Lo script `full-setup.sh` è idempotente: può essere rieseguito dopo un reset senza problemi.

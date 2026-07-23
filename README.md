@@ -156,8 +156,8 @@ echo "127.0.0.1 techfix.local" | sudo tee -a /etc/hosts
 ### 1. MariaDB Primary
 
 ```bash
-export DB_PASSWORD="pippo2002"
-export REPL_PASSWORD="pippo2002"
+export DB_PASSWORD="password"
+export REPL_PASSWORD="password"
 sudo -E bash infra/setup-mariadb-primary.sh
 ```
 

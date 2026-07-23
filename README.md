@@ -349,7 +349,7 @@ watch -n 1 'echo "=== HPA ===" && kubectl get hpa -n techfix && echo "" && echo 
 k6 run scripts/load-test.js
 ```
 
-Parametri: 200 VU, 3 minuti, `https://techfix.local/`
+Parametri: 200 VU, 3 minuti, target `https://techfix.local/` e `https://techfix.local/catalogo`
 
 ### Comportamento atteso
 
@@ -364,8 +364,9 @@ Parametri: 200 VU, 3 minuti, `https://techfix.local/`
 ### Risultati attesi k6
 
 - ✅ `http_req_failed`: 0% (< 5% threshold)
-- ✅ `http_req_duration p(95)`: < 5s
-- ✅ Tutti i checks passed (catalogo + ricerca)
+- ✅ `http_req_duration p(95)`: < 500ms
+- ✅ Tutti i checks passed (homepage + catalogo)
+- ✅ ~40,000 richieste totali, ~222 req/s
 - ✅ HPA scala fino a 10 pod
 
 ---

@@ -259,6 +259,12 @@ fi
 #   - It does not require filesystem writes (safe in read-only containers)
 #   - It is available in all PHP versions ≥ 5.3
 #
+# -d memory_limit=-1 is required: PHP has its own internal memory ceiling
+# (default 128M in php.ini). Without this flag PHP's allocator refuses the
+# request before the kernel cgroup ever sees it — the script completes with
+# exit code 0 instead of being killed. Setting memory_limit=-1 disables
+# PHP's ceiling so the allocation reaches the kernel cgroup boundary.
+#
 # The exec call is intentionally run in the background (& disown) because
 # the process will be killed by the kernel before it can return — kubectl exec
 # will therefore exit with a non-zero code (137 = SIGKILL), which is expected
@@ -276,8 +282,14 @@ info "(kubectl exec exit code 137 / non-zero is expected and correct)"
 
 # Run in background — the kernel will kill the PHP process mid-execution.
 # kubectl exec will then return exit code 137 (SIGKILL) which is expected.
+#
+# -d memory_limit=-1 disables PHP's own internal memory ceiling so the
+# allocator does not refuse the request before the cgroup limit is reached.
+# Without this flag the default php.ini memory_limit (128M) blocks the
+# allocation silently and the script completes with exit code 0 instead
+# of being killed by the kernel.
 kubectl exec "${TARGET_POD}" -n "${NAMESPACE}" -c "${CONTAINER_NAME}" -- \
-    php -r "
+    php -d memory_limit=-1 -r "
         \$block = str_repeat('A', ${ALLOC_BYTES});
         // This line is never reached — the kernel kills the process above
         echo strlen(\$block);

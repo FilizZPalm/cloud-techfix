@@ -40,12 +40,12 @@ spec:
 ---
 # Policy 2: laravel-egress-policy
 # Restricts outbound traffic from Laravel pods to only:
-#   - MariaDB Primary  (10.42.0.1:3306) — writes
-#   - MariaDB Replica  (10.42.0.1:3307) — reads
+#   - MariaDB Primary  (172.16.100.10:3306) — writes
+#   - MariaDB Replica  (172.16.100.11:3306) — reads
 #   - DNS              (any destination, port 53 UDP + TCP) — service discovery
 #
-# 10.42.0.1 is the k3s node host IP in the pod network (gateway for pod CIDR
-# 10.42.0.0/16). Both MariaDB instances run on the same VM at this address.
+# MariaDB Primary and Replica run on dedicated OpenNebula VMs on the
+# techfix-net virtual network (172.16.100.0/24, bridge: minionebr).
 #
 # The DNS rule intentionally omits a `to` selector so it matches any
 # destination — this covers both CoreDNS pods inside the cluster and any
@@ -64,13 +64,13 @@ spec:
   policyTypes:
     - Egress
   egress:
-    # Allow MySQL Primary (port 3306) and MySQL Replica (port 3307) on the
-    # k3s node host IP (10.42.0.1 — gateway of the k3s pod network).
+    # Allow MariaDB Primary (172.16.100.10) and Replica (172.16.100.11)
+    # on port 3306. Both run on dedicated OpenNebula VMs.
     - to:
         - ipBlock:
-            cidr: 172.16.1.10/32
+            cidr: 172.16.100.10/32
         - ipBlock:
-            cidr: 172.16.1.11/32
+            cidr: 172.16.100.11/32
       ports:
         - protocol: TCP
           port: 3306

@@ -269,9 +269,18 @@ baseline_ok=true
 
 if [[ "${baseline_desired:-0}" -ne "${HPA_MIN_REPLICAS}" ]] 2>/dev/null; then
     info "WARNING: HPA desiredReplicas=${baseline_desired}, expected ${HPA_MIN_REPLICAS}"
-    info "         Waiting 30s for HPA to settle back to minReplicas..."
-    sleep 30
-    baseline_desired=$(get_hpa_desired)
+    info "         Waiting for HPA to settle back to minReplicas (up to 300s)..."
+    settle_elapsed=0
+    while [[ ${settle_elapsed} -lt 300 ]]; do
+        sleep 15
+        settle_elapsed=$((settle_elapsed + 15))
+        baseline_desired=$(get_hpa_desired)
+        info "         [${settle_elapsed}s] HPA desiredReplicas=${baseline_desired}"
+        if [[ "${baseline_desired:-0}" -eq "${HPA_MIN_REPLICAS}" ]] 2>/dev/null; then
+            info "         HPA settled at minReplicas=${HPA_MIN_REPLICAS}"
+            break
+        fi
+    done
     if [[ "${baseline_desired:-0}" -ne "${HPA_MIN_REPLICAS}" ]] 2>/dev/null; then
         baseline_ok=false
     fi

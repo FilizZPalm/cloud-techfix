@@ -25,7 +25,10 @@ const catalogoPageDuration = new Trend('catalogo_page_duration', true);
 export const options = {
   vus: 200,
   duration: '3m',
-  insecureSkipTLSVerify: true,
+  
+  //tlsConfig: {
+  insecureSkipVerify: true,
+  //},
   thresholds: {
     http_req_failed: ['rate<0.05'],         // < 5% richieste fallite
     http_req_duration: ['p(95)<5000'],      // p95 latenza < 5 secondi

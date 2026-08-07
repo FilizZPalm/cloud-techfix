@@ -68,12 +68,12 @@ spec:
     # k3s node host IP (10.42.0.1 — gateway of the k3s pod network).
     - to:
         - ipBlock:
-            cidr: 10.42.0.1/32
+            cidr: 172.16.1.10/32
+        - ipBlock:
+            cidr: 172.16.1.11/32
       ports:
         - protocol: TCP
           port: 3306
-        - protocol: TCP
-          port: 3307
     # Allow DNS for service discovery (CoreDNS inside the cluster and
     # upstream resolvers). No destination restriction — port 53 only.
     - ports:
